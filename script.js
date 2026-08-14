@@ -1452,20 +1452,28 @@
       const fill = resolveTaskFill(ordered[index]);
       const stroke = darkenHexColor(fill);
 
+      // Mermaid paints bars via CSS classes (#id .task0 { fill... }), so attributes
+      // alone are ignored — force colors through inline !important styles.
       rect.setAttribute("fill", fill);
       rect.setAttribute("stroke", stroke);
       rect.setAttribute("stroke-width", "1.75");
       rect.setAttribute("rx", "2");
       rect.setAttribute("ry", "2");
+      rect.style.setProperty("fill", fill, "important");
+      rect.style.setProperty("stroke", stroke, "important");
+      rect.style.setProperty("stroke-width", "1.75px", "important");
     });
   }
 
   function isTaskRect(rect) {
     const cls = String(rect.getAttribute("class") || "");
+    if (/\bsection\b/i.test(cls)) return false;
     const fillAttr = String(rect.getAttribute("fill") || "").toLowerCase();
+    const styleFill = String(rect.style?.fill || "").toLowerCase();
     return (
       /\btask\b/i.test(cls) ||
       fillAttr === CHART_COLORS.taskFill.toLowerCase() ||
+      styleFill === CHART_COLORS.taskFill.toLowerCase() ||
       fillAttr === "#0b5f59" ||
       fillAttr === "#5b8a84"
     );
