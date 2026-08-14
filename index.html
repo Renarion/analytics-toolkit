@@ -116,6 +116,23 @@
     </div>
   </div>
 
+  <div class="widget-color-popover" id="widget-color-popover" hidden role="dialog" aria-label="Выбор цвета виджета">
+    <p class="widget-color-popover-title">Выбор цвета виджета</p>
+    <div class="widget-color-swatches" id="widget-color-swatches" role="listbox" aria-label="Палитра"></div>
+    <div class="field widget-color-custom">
+      <label for="widget-color-rgb">Свой RGB</label>
+      <div class="widget-color-rgb-row">
+        <input type="text" id="widget-color-rgb" placeholder="rgb(15, 118, 110) или #0f766e" autocomplete="off" maxlength="32">
+        <button type="button" class="btn btn-secondary" id="widget-color-rgb-apply">Применить</button>
+      </div>
+      <p class="field-error" id="widget-color-rgb-error" hidden></p>
+    </div>
+    <div class="widget-color-footer">
+      <button type="button" class="btn btn-ghost" id="widget-color-reset">По умолчанию</button>
+      <button type="button" class="btn btn-secondary" id="widget-color-done">Готово</button>
+    </div>
+  </div>
+
   <template id="task-template">
     <article class="task-card" data-task-id="">
       <div class="task-card-top">
@@ -145,6 +162,14 @@
           <input type="hidden" data-field="end" value="">
           <p class="field-error" data-error="start" hidden></p>
           <p class="field-error" data-error="end" hidden></p>
+        </div>
+        <div class="field field-color">
+          <label>Цвет</label>
+          <button type="button" class="widget-color-trigger" data-action="open-color" aria-haspopup="dialog">
+            <span class="widget-color-swatch" data-color-swatch aria-hidden="true"></span>
+            <span data-color-label>Выбор цвета виджета</span>
+          </button>
+          <input type="hidden" data-field="color" value="">
         </div>
       </div>
     </article>

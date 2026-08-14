@@ -20,6 +20,14 @@
     axis: "#8aa0ad",
   };
 
+  const WIDGET_COLOR_PRESETS = [
+    { id: "default", label: "По умолчанию", fill: CHART_COLORS.taskFill },
+    { id: "pink", label: "Розовый", fill: "#db2777" },
+    { id: "blue", label: "Синий", fill: "#2563eb" },
+    { id: "red", label: "Красный", fill: "#dc2626" },
+    { id: "green", label: "Зеленый", fill: "#16a34a" },
+  ];
+
   const EXAMPLE = {
     title: "Планы Q3 2026",
     tasks: [
@@ -44,10 +52,12 @@
     ],
   };
 
-  /** @type {{ id: string, category: string, name: string, start: string, end: string }[]} */
+  /** @type {{ id: string, category: string, name: string, start: string, end: string, color: string }[]} */
   let tasks = [];
   let hasBuiltOnce = false;
   let lastMermaidCode = "";
+  /** @type {{ category: string, name: string, start: string, end: string, color: string }[]} */
+  let lastRenderedTasks = [];
   let renderToken = 0;
 
   const els = {
@@ -85,8 +95,80 @@
       name: "",
       start: "",
       end: "",
+      color: "",
       ...overrides,
     };
+  }
+
+  function normalizeHexColor(value) {
+    const raw = String(value || "").trim();
+    const short = raw.match(/^#([0-9a-f]{3})$/i);
+    if (short) {
+      const [r, g, b] = short[1].split("");
+      return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+    }
+    const full = raw.match(/^#([0-9a-f]{6})$/i);
+    if (full) return `#${full[1].toLowerCase()}`;
+    return "";
+  }
+
+  function parseColorInput(raw) {
+    const value = String(raw || "").trim();
+    if (!value) return "";
+
+    const asHex = normalizeHexColor(value);
+    if (asHex) return asHex;
+
+    const rgbMatch = value.match(
+      /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/i
+    );
+    const csvMatch = value.match(/^(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})$/);
+    const match = rgbMatch || csvMatch;
+    if (!match) return "";
+
+    const channels = [match[1], match[2], match[3]].map((part) => {
+      const num = Number.parseInt(part, 10);
+      if (!Number.isFinite(num) || num < 0 || num > 255) return null;
+      return num;
+    });
+    if (channels.some((channel) => channel === null)) return "";
+
+    return `#${channels
+      .map((channel) => channel.toString(16).padStart(2, "0"))
+      .join("")}`;
+  }
+
+  function darkenHexColor(hex, amount = 0.28) {
+    const normalized = normalizeHexColor(hex);
+    if (!normalized) return CHART_COLORS.taskStroke;
+    const num = Number.parseInt(normalized.slice(1), 16);
+    const r = Math.max(0, Math.round(((num >> 16) & 255) * (1 - amount)));
+    const g = Math.max(0, Math.round(((num >> 8) & 255) * (1 - amount)));
+    const b = Math.max(0, Math.round((num & 255) * (1 - amount)));
+    return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+  }
+
+  function resolveTaskFill(task) {
+    return normalizeHexColor(task?.color) || CHART_COLORS.taskFill;
+  }
+
+  function getOrderedTasksForChart(taskList) {
+    const sections = new Map();
+    taskList.forEach((task) => {
+      const sectionName = truncateLabel(task.category, 36) || "Без категории";
+      if (!sections.has(sectionName)) {
+        sections.set(sectionName, []);
+      }
+      sections.get(sectionName).push(task);
+    });
+
+    const ordered = [];
+    sections.forEach((sectionTasks) => {
+      [...sectionTasks]
+        .sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end))
+        .forEach((task) => ordered.push(task));
+    });
+    return ordered;
   }
 
   function sanitizeMermaidText(text) {
@@ -464,6 +546,7 @@
   }
 
   function openRangePicker(taskId, anchor) {
+    closeColorPicker();
     const card = els.tasksContainer.querySelector(`[data-task-id="${taskId}"]`);
     const popover = document.getElementById("date-range-popover");
     if (!card || !popover) return;
@@ -581,6 +664,215 @@
     });
   }
 
+  const colorPicker = {
+    taskId: null,
+    draftColor: "",
+    suppressOutsideClose: false,
+  };
+
+  function getColorPickerCard() {
+    if (!colorPicker.taskId) return null;
+    return els.tasksContainer.querySelector(`[data-task-id="${colorPicker.taskId}"]`);
+  }
+
+  function setColorRgbError(message) {
+    const error = document.getElementById("widget-color-rgb-error");
+    if (!error) return;
+    if (!message) {
+      error.hidden = true;
+      error.textContent = "";
+      return;
+    }
+    error.hidden = false;
+    error.textContent = message;
+  }
+
+  function updateColorTrigger(card, color) {
+    if (!card) return;
+    const swatch = card.querySelector("[data-color-swatch]");
+    const hidden = card.querySelector('[data-field="color"]');
+    const fill = resolveTaskFill({ color });
+    if (swatch) swatch.style.background = fill;
+    if (hidden) hidden.value = normalizeHexColor(color);
+  }
+
+  function closeColorPicker() {
+    const popover = document.getElementById("widget-color-popover");
+    if (!popover) return;
+    popover.hidden = true;
+    colorPicker.taskId = null;
+    colorPicker.draftColor = "";
+    colorPicker.suppressOutsideClose = false;
+    setColorRgbError("");
+  }
+
+  function applyColorDraftToTask() {
+    if (!colorPicker.taskId) return;
+    const card = getColorPickerCard();
+    if (!card) return;
+
+    const fill = normalizeHexColor(colorPicker.draftColor);
+    const stored =
+      fill && fill !== CHART_COLORS.taskFill.toLowerCase() ? fill : "";
+    updateColorTrigger(card, stored);
+    syncTaskFromDom(colorPicker.taskId);
+    saveToLocalStorage();
+  }
+
+  function positionColorPicker(anchor, popover) {
+    const rect = anchor.getBoundingClientRect();
+    const popWidth = popover.offsetWidth || 300;
+    const popHeight = popover.offsetHeight || 280;
+    let left = rect.left;
+    let top = rect.bottom + 8;
+    if (left + popWidth > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - popWidth - 8);
+    }
+    if (top + popHeight > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - popHeight - 8);
+    }
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+  }
+
+  function renderColorSwatches() {
+    const host = document.getElementById("widget-color-swatches");
+    const rgbInput = document.getElementById("widget-color-rgb");
+    if (!host) return;
+
+    const current = resolveTaskFill({ color: colorPicker.draftColor });
+    host.replaceChildren();
+
+    WIDGET_COLOR_PRESETS.forEach((preset) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "widget-color-swatch-btn";
+      btn.setAttribute("role", "option");
+      btn.setAttribute("aria-label", preset.label);
+      btn.title = preset.label;
+      btn.dataset.color = preset.fill;
+      btn.style.setProperty("--swatch", preset.fill);
+      if (normalizeHexColor(preset.fill) === current) {
+        btn.classList.add("is-selected");
+        btn.setAttribute("aria-selected", "true");
+      } else {
+        btn.setAttribute("aria-selected", "false");
+      }
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        colorPicker.draftColor =
+          preset.id === "default" ? "" : normalizeHexColor(preset.fill);
+        if (rgbInput) rgbInput.value = resolveTaskFill({ color: colorPicker.draftColor });
+        setColorRgbError("");
+        renderColorSwatches();
+        applyColorDraftToTask();
+      });
+      host.appendChild(btn);
+    });
+
+    if (rgbInput && document.activeElement !== rgbInput) {
+      rgbInput.value = current;
+    }
+  }
+
+  function openColorPicker(taskId, anchor) {
+    closeRangePicker();
+    const card = els.tasksContainer.querySelector(`[data-task-id="${taskId}"]`);
+    const popover = document.getElementById("widget-color-popover");
+    if (!card || !popover) return;
+
+    if (!popover.hidden && colorPicker.taskId === taskId) {
+      positionColorPicker(anchor, popover);
+      return;
+    }
+
+    if (!popover.hidden && colorPicker.taskId && colorPicker.taskId !== taskId) {
+      applyColorDraftToTask();
+      closeColorPicker();
+    }
+
+    colorPicker.suppressOutsideClose = true;
+    colorPicker.taskId = taskId;
+    colorPicker.draftColor = card.querySelector('[data-field="color"]').value || "";
+
+    setColorRgbError("");
+    renderColorSwatches();
+    popover.hidden = false;
+    positionColorPicker(anchor, popover);
+
+    window.setTimeout(() => {
+      colorPicker.suppressOutsideClose = false;
+    }, 0);
+  }
+
+  function applyCustomRgbColor() {
+    const rgbInput = document.getElementById("widget-color-rgb");
+    if (!rgbInput) return;
+    const parsed = parseColorInput(rgbInput.value);
+    if (!parsed) {
+      setColorRgbError("Введите цвет как rgb(15, 118, 110) или #0f766e");
+      return;
+    }
+    colorPicker.draftColor =
+      parsed === CHART_COLORS.taskFill.toLowerCase() ? "" : parsed;
+    setColorRgbError("");
+    renderColorSwatches();
+    applyColorDraftToTask();
+  }
+
+  function bindColorPickerControls() {
+    const popover = document.getElementById("widget-color-popover");
+    if (!popover) return;
+
+    document.getElementById("widget-color-done")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      applyColorDraftToTask();
+      closeColorPicker();
+    });
+
+    document.getElementById("widget-color-reset")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      colorPicker.draftColor = "";
+      setColorRgbError("");
+      renderColorSwatches();
+      applyColorDraftToTask();
+    });
+
+    document.getElementById("widget-color-rgb-apply")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      applyCustomRgbColor();
+    });
+
+    document.getElementById("widget-color-rgb")?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        applyCustomRgbColor();
+      }
+    });
+
+    document.addEventListener(
+      "mousedown",
+      (event) => {
+        if (popover.hidden || colorPicker.suppressOutsideClose) return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (popover.contains(target)) return;
+        if (target.closest("[data-action='open-color']")) return;
+        applyColorDraftToTask();
+        closeColorPicker();
+      },
+      true
+    );
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !popover.hidden) {
+        applyColorDraftToTask();
+        closeColorPicker();
+      }
+    });
+  }
+
   function syncTaskFromDom(taskId) {
     const card = els.tasksContainer.querySelector(`[data-task-id="${taskId}"]`);
     const task = tasks.find((item) => item.id === taskId);
@@ -590,6 +882,7 @@
     task.name = card.querySelector('[data-field="name"]').value;
     task.start = card.querySelector('[data-field="start"]').value;
     task.end = card.querySelector('[data-field="end"]').value;
+    task.color = card.querySelector('[data-field="color"]').value || "";
   }
 
   function syncAllFromDom() {
@@ -598,6 +891,7 @@
 
   function renderTasks() {
     closeRangePicker();
+    closeColorPicker();
     els.tasksContainer.replaceChildren();
 
     tasks.forEach((task, index) => {
@@ -610,12 +904,15 @@
       const nameInput = card.querySelector('[data-field="name"]');
       const startInput = card.querySelector('[data-field="start"]');
       const endInput = card.querySelector('[data-field="end"]');
+      const colorInput = card.querySelector('[data-field="color"]');
 
       categoryInput.value = task.category;
       nameInput.value = task.name;
       startInput.value = task.start;
       endInput.value = task.end;
+      colorInput.value = normalizeHexColor(task.color);
       updateRangeLabel(card);
+      updateColorTrigger(card, colorInput.value);
 
       card.addEventListener("input", () => {
         syncTaskFromDom(task.id);
@@ -631,6 +928,17 @@
         event.stopPropagation();
         rangePicker.suppressOutsideClose = true;
         openRangePicker(task.id, event.currentTarget);
+      });
+
+      card.querySelector('[data-action="open-color"]').addEventListener("mousedown", (event) => {
+        event.stopPropagation();
+      });
+
+      card.querySelector('[data-action="open-color"]').addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        colorPicker.suppressOutsideClose = true;
+        openColorPicker(task.id, event.currentTarget);
       });
 
       card.querySelector('[data-action="remove"]').addEventListener("click", () => {
@@ -676,6 +984,7 @@
       name: source.name,
       start: source.start,
       end: source.end,
+      color: source.color,
     });
     tasks.splice(index + 1, 0, clone);
     renderTasks();
@@ -694,6 +1003,7 @@
         name: task.name.trim(),
         start: task.start,
         end: task.end,
+        color: normalizeHexColor(task.color),
       })),
     };
   }
@@ -1011,6 +1321,19 @@
     const renderCode = parsed.tasks.length
       ? generateMermaidCode(parsed.title, tasks)
       : code;
+    if (parsed.tasks.length) {
+      lastRenderedTasks = tasks
+        .filter((task) => task.category || task.name || task.start || task.end)
+        .map((task) => ({
+          category: task.category,
+          name: task.name,
+          start: task.start,
+          end: task.end,
+          color: normalizeHexColor(task.color),
+        }));
+    } else {
+      lastRenderedTasks = [];
+    }
     const ok = await renderRoadmap(renderCode);
     showLoader(false);
 
@@ -1117,16 +1440,19 @@
     const svg = els.diagramContainer.querySelector("svg");
     if (!svg) return;
 
-    const fill = CHART_COLORS.taskFill;
-    const stroke = CHART_COLORS.taskStroke;
+    const ordered = getOrderedTasksForChart(lastRenderedTasks);
+    const bars = [...svg.querySelectorAll("rect")]
+      .filter(isTaskRect)
+      .sort(
+        (a, b) =>
+          Number(a.getAttribute("y") || 0) - Number(b.getAttribute("y") || 0)
+      );
 
-    svg.querySelectorAll("rect").forEach((rect) => {
-      if (!isTaskRect(rect)) return;
+    bars.forEach((rect, index) => {
+      const fill = resolveTaskFill(ordered[index]);
+      const stroke = darkenHexColor(fill);
 
-      const fillAttr = String(rect.getAttribute("fill") || "").toLowerCase();
-      if (!rect.getAttribute("fill") || fillAttr === "none") {
-        rect.setAttribute("fill", fill);
-      }
+      rect.setAttribute("fill", fill);
       rect.setAttribute("stroke", stroke);
       rect.setAttribute("stroke-width", "1.75");
       rect.setAttribute("rx", "2");
@@ -1613,6 +1939,7 @@
       validation.data.title,
       validation.data.tasks
     );
+    lastRenderedTasks = validation.data.tasks;
 
     showLoader(true);
     await wait(LOADER_MS);
@@ -1730,11 +2057,12 @@
     syncAllFromDom();
     const payload = {
       title: els.title.value,
-      tasks: tasks.map(({ category, name, start, end }) => ({
+      tasks: tasks.map(({ category, name, start, end, color }) => ({
         category,
         name,
         start,
         end,
+        color: normalizeHexColor(color),
       })),
       mermaidImport: els.mermaidImportInput.value,
     };
@@ -1765,6 +2093,7 @@
           name: String(task.name || ""),
           start: String(task.start || ""),
           end: String(task.end || ""),
+          color: normalizeHexColor(task.color),
         })
       );
 
@@ -1788,6 +2117,7 @@
     tasks = [createEmptyTask()];
     hasBuiltOnce = false;
     lastMermaidCode = "";
+    lastRenderedTasks = [];
     renderToken += 1;
     els.buildBtn.textContent = "Построить roadmap";
     els.resultSection.hidden = true;
@@ -1916,6 +2246,7 @@
     const ready = initMermaid();
     bindEvents();
     bindRangePickerControls();
+    bindColorPickerControls();
 
     const restored = loadFromLocalStorage();
     if (!restored) {

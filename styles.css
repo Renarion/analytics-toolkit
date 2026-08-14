@@ -347,11 +347,12 @@ button {
 
 .task-fields {
   display: grid;
-  grid-template-columns: 1.15fr 1.35fr 1.15fr;
+  grid-template-columns: 1.1fr 1.25fr 1.1fr 1fr;
   gap: 0.75rem;
 }
 
-.date-range-trigger {
+.date-range-trigger,
+.widget-color-trigger {
   width: 100%;
   min-height: 2.7rem;
   padding: 0.55rem 0.8rem;
@@ -364,8 +365,33 @@ button {
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
+.widget-color-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.widget-color-swatch {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  border: 1px solid rgba(21, 32, 40, 0.18);
+  background: #0f766e;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.widget-color-trigger [data-color-label] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .date-range-trigger:hover,
-.date-range-trigger:focus {
+.date-range-trigger:focus,
+.widget-color-trigger:hover,
+.widget-color-trigger:focus {
   outline: none;
   border-color: var(--brand);
   background: #fff;
@@ -380,6 +406,75 @@ button {
 .field.has-error .date-range-trigger {
   border-color: var(--danger);
   background: #fff8f7;
+}
+
+.widget-color-popover {
+  position: fixed;
+  z-index: 60;
+  width: min(300px, calc(100vw - 1.5rem));
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(21, 32, 40, 0.18);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.widget-color-popover[hidden] {
+  display: none !important;
+}
+
+.widget-color-popover-title {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.widget-color-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
+}
+
+.widget-color-swatch-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: var(--swatch, #0f766e);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(21, 32, 40, 0.12);
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.widget-color-swatch-btn:hover,
+.widget-color-swatch-btn:focus {
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+}
+
+.widget-color-swatch-btn.is-selected {
+  border-color: var(--brand-deep);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+}
+
+.widget-color-rgb-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.widget-color-rgb-row .btn {
+  white-space: nowrap;
+}
+
+.widget-color-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .date-range-popover {
@@ -713,7 +808,8 @@ button {
     grid-template-columns: 1fr 1fr;
   }
 
-  .field-period {
+  .field-period,
+  .field-color {
     grid-column: 1 / -1;
   }
 }
@@ -733,7 +829,8 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .field-period {
+  .field-period,
+  .field-color {
     grid-column: auto;
   }
 
