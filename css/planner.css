@@ -235,10 +235,10 @@
 }
 
 .item.is-critical {
-  /* rgba(240, 68, 56, 0.55) over white, kept opaque so the action overlay can match it. */
-  --item-bg: #f79892;
+  /* rgba(240, 68, 56, 0.35) over white, kept opaque so the action overlay can match it. */
+  --item-bg: #fabeb9;
   padding-right: 2rem;
-  border-color: rgba(180, 35, 24, 0.55);
+  border-color: rgba(180, 35, 24, 0.4);
 }
 
 .item.is-dragging {

@@ -2,7 +2,7 @@
 
 Small, open-source browser tools for the everyday work of analysts and data scientists.
 
-**Live:** https://renarion.github.io/roadmap-toolkit/
+**Live:** https://renarion.github.io/analytics-toolkit/
 
 ## Why
 
@@ -46,7 +46,7 @@ Paste values and get a list ready for a filter: `123 1213 1244` → `'123', '121
 
 The project is plain HTML, CSS and JavaScript: no framework, no build step. Open `index.html` in a browser, or serve the folder with any static server.
 
-- **Ideas and bugs:** open an [issue](https://github.com/Renarion/roadmap-toolkit/issues). New tools for analysts and data scientists are welcome. Describe the problem you solve every week, and we'll see if a tool fits.
+- **Ideas and bugs:** open an [issue](https://github.com/Renarion/analytics-toolkit/issues). New tools for analysts and data scientists are welcome. Describe the problem you solve every week, and we'll see if a tool fits.
 - **Pull requests:** small, focused PRs are easiest to review. Every page should keep working offline-first and must not send user data anywhere.
 - **Design:** all pages share one design system in `css/base.css` (colours, type, buttons, fields). Reuse its tokens and components instead of adding new ones, so new tools look like part of the same kit.
 
