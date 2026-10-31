@@ -1,180 +1,84 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roadmap Toolkit — диаграммы Ганта</title>
-  <meta name="description" content="Создавайте красивые roadmap и диаграммы Ганта прямо в браузере — без сервера и регистрации.">
+  <title>Analytics Toolkit</title>
+  <meta name="description" content="Small open-source browser tools for analysts and data scientists: roadmaps, a weekly planner and more. No sign-up, no backend.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/home.css">
 </head>
 <body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h9M8 12h10M6 18h7"/></svg>
+        </span>
+        <span class="brand-name">Analytics Toolkit</span>
+      </a>
+      <nav class="nav-links" aria-label="Tools">
+        <a href="roadmap.html">Roadmap</a>
+        <a href="planner.html">Weekly planner</a>
+        <a href="list.html">List formatter</a>
+      </nav>
+      <span class="nav-spacer"></span>
+      <a class="nav-github" href="https://github.com/Renarion/roadmap-toolkit" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+  </header>
+
   <div class="page">
-    <header class="hero">
-      <p class="brand">Roadmap Toolkit</p>
-      <h1>Дорожная карта за пару минут</h1>
-      <p class="hero-lead">Добавьте категории, задачи и сроки — мы автоматически построим дорожную карту.</p>
+    <header class="page-head home-hero">
+      <p class="eyebrow">Open-source analytics toolkit</p>
+      <h1>Small tools for the everyday work of analysts</h1>
+      <p class="lead">Plan, visualise and keep track of your work without spreadsheets, sign-ups or servers. Every tool runs in your browser and keeps your data on your machine.</p>
+      <ul class="home-facts">
+        <li>No sign-up</li>
+        <li>No backend</li>
+        <li>Data stays in your browser</li>
+        <li>Open source · MIT</li>
+      </ul>
     </header>
 
-    <main class="layout">
-      <div class="form-shell">
-      <section class="panel" aria-labelledby="form-heading">
-        <div class="panel-head">
-          <h2 id="form-heading">Данные roadmap</h2>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-ghost" id="load-example-btn">Загрузить пример</button>
-            <button type="button" class="btn btn-ghost btn-danger-text" id="clear-all-btn">Очистить всё</button>
-          </div>
-        </div>
+    <main class="tools">
+      <a class="tool-card" href="roadmap.html">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h9M8 12h11M6 18h7"/></svg>
+        </span>
+        <h2>Roadmap</h2>
+        <p>Build a Gantt chart from tasks and dates, export it to PNG, SVG or Mermaid.</p>
+        <span class="tool-cta">Open roadmap →</span>
+      </a>
 
-        <div class="field field-title">
-          <label for="diagram-title">Название roadmap</label>
-          <input type="text" id="diagram-title" name="diagram-title" placeholder="Например: Планы Q3 2026" autocomplete="off" maxlength="120">
-          <p class="field-error" id="title-error" hidden></p>
-        </div>
+      <a class="tool-card" href="planner.html">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+        </span>
+        <h2>Weekly planner</h2>
+        <p>Plan tasks for each day of the week, mark critical ones and track progress.</p>
+        <span class="tool-cta">Open planner →</span>
+      </a>
 
-        <div class="tasks-header">
-          <h3>Задачи</h3>
-          <p class="tasks-hint">Задачи с одинаковой категорией объединятся в одну секцию на диаграмме.</p>
-        </div>
-
-        <div id="tasks-container" class="tasks-container" aria-live="polite"></div>
-        <p class="form-error" id="form-error" hidden></p>
-
-        <div class="form-footer">
-          <button type="button" class="btn btn-secondary" id="add-task-btn">+ Добавить задачу</button>
-          <button type="button" class="btn btn-primary" id="build-btn">Построить roadmap</button>
-        </div>
-      </section>
-
-      <details class="panel mermaid-import-panel">
-        <summary class="mermaid-import-summary">
-          <span class="mermaid-import-summary-text">Импорт кода Mermaid</span>
-          <span class="mermaid-import-chevron" aria-hidden="true"></span>
-        </summary>
-        <div class="mermaid-import-body">
-          <p class="tasks-hint">Вставьте код диаграммы gantt — поля выше заполнятся автоматически, и вы сможете их отредактировать.</p>
-          <div class="field">
-            <label for="mermaid-import-input">Код Mermaid</label>
-            <textarea id="mermaid-import-input" class="mermaid-import-input" rows="10" placeholder="gantt&#10;    title Планы Q3 2026&#10;    dateFormat YYYY-MM-DD&#10;    section Категория&#10;    Задача :2026-07-01, 2026-08-16"></textarea>
-            <p class="field-error" id="mermaid-import-error" hidden></p>
-            <p class="mermaid-import-note" id="mermaid-import-note" hidden></p>
-          </div>
-          <div class="mermaid-import-actions">
-            <button type="button" class="btn btn-secondary mermaid-import-btn" id="mermaid-import-btn">Отрисовать из Mermaid</button>
-          </div>
-        </div>
-      </details>
-      </div>
-
-      <section class="result" id="result-section" hidden>
-        <div class="result-head">
-          <h2>Диаграмма</h2>
-          <div class="export-actions" id="export-actions">
-            <button type="button" class="btn btn-secondary" id="download-svg-btn">Скачать SVG</button>
-            <button type="button" class="btn btn-secondary" id="download-png-btn">Скачать PNG</button>
-            <button type="button" class="btn btn-ghost" id="copy-mermaid-btn">Скопировать Mermaid-код</button>
-          </div>
-        </div>
-        <p class="copy-toast" id="copy-toast" hidden>Код скопирован</p>
-        <p class="render-error" id="render-error" hidden></p>
-        <div class="diagram-scroll" id="diagram-scroll">
-          <div id="diagram-container" class="diagram-container"></div>
-        </div>
-      </section>
+      <a class="tool-card" href="list.html">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H6.5A2.5 2.5 0 004 7.5v2A2.5 2.5 0 012 12a2.5 2.5 0 012 2.5v2A2.5 2.5 0 006.5 19H8M16 5h1.5A2.5 2.5 0 0120 7.5v2a2.5 2.5 0 002 2.5 2.5 2.5 0 00-2 2.5v2a2.5 2.5 0 01-2.5 2.5H16"/><path d="M9.5 15.5l1-2M13.5 15.5l1-2"/></svg>
+        </span>
+        <h2>List formatter</h2>
+        <p>Turn a pasted column or space-separated values into a comma list for SQL or Python.</p>
+        <span class="tool-cta">Open formatter →</span>
+      </a>
     </main>
 
     <footer class="footer">
-      <p>Работает полностью в браузере · данные сохраняются локально</p>
+      <p>Runs entirely in your browser · data is stored locally</p>
+      <p><a href="https://github.com/Renarion/roadmap-toolkit" target="_blank" rel="noopener">Open source on GitHub</a></p>
     </footer>
   </div>
-
-  <div class="loader-overlay" id="loader-overlay" hidden aria-hidden="true">
-    <div class="loader-card" role="status" aria-live="polite">
-      <div class="loader-spinner" aria-hidden="true"></div>
-      <p>Строим ваш roadmap...</p>
-    </div>
-  </div>
-
-  <div class="date-range-popover" id="date-range-popover" hidden role="dialog" aria-label="Выбор периода">
-    <div class="date-range-head">
-      <button type="button" class="btn btn-tiny" id="range-prev-month" aria-label="Предыдущий месяц">‹</button>
-      <p class="date-range-month" id="range-month-label"></p>
-      <button type="button" class="btn btn-tiny" id="range-next-month" aria-label="Следующий месяц">›</button>
-    </div>
-    <p class="date-range-step" id="range-step-label">Выберите дату начала</p>
-    <div class="date-range-weekdays" aria-hidden="true">
-      <span>пн</span><span>вт</span><span>ср</span><span>чт</span><span>пт</span><span>сб</span><span>вс</span>
-    </div>
-    <div class="date-range-grid" id="range-day-grid"></div>
-    <div class="date-range-footer">
-      <button type="button" class="btn btn-ghost" id="range-clear-btn">Сбросить</button>
-      <button type="button" class="btn btn-secondary" id="range-done-btn">Готово</button>
-    </div>
-  </div>
-
-  <div class="widget-color-popover" id="widget-color-popover" hidden role="dialog" aria-label="Выбор цвета виджета">
-    <p class="widget-color-popover-title">Выбор цвета виджета</p>
-    <div class="widget-color-swatches" id="widget-color-swatches" role="listbox" aria-label="Палитра"></div>
-    <div class="field widget-color-custom">
-      <label for="widget-color-rgb">Свой RGB</label>
-      <div class="widget-color-rgb-row">
-        <input type="text" id="widget-color-rgb" placeholder="rgb(15, 118, 110) или #0f766e" autocomplete="off" maxlength="32">
-        <button type="button" class="btn btn-secondary" id="widget-color-rgb-apply">Применить</button>
-      </div>
-      <p class="field-error" id="widget-color-rgb-error" hidden></p>
-    </div>
-    <div class="widget-color-footer">
-      <button type="button" class="btn btn-ghost" id="widget-color-reset">По умолчанию</button>
-      <button type="button" class="btn btn-secondary" id="widget-color-done">Готово</button>
-    </div>
-  </div>
-
-  <template id="task-template">
-    <article class="task-card" data-task-id="">
-      <div class="task-card-top">
-        <span class="task-number"></span>
-        <div class="task-card-actions">
-          <button type="button" class="btn btn-tiny" data-action="duplicate" title="Дублировать">Дублировать</button>
-          <button type="button" class="btn btn-tiny btn-danger-text" data-action="remove" title="Удалить">Удалить</button>
-        </div>
-      </div>
-      <div class="task-fields">
-        <div class="field">
-          <label>Категория</label>
-          <input type="text" data-field="category" placeholder="Например: Снижение SCV" maxlength="80" autocomplete="off">
-          <p class="field-error" data-error="category" hidden></p>
-        </div>
-        <div class="field">
-          <label>Название задачи</label>
-          <input type="text" data-field="name" placeholder="Например: Детекция аномалий" maxlength="120" autocomplete="off">
-          <p class="field-error" data-error="name" hidden></p>
-        </div>
-        <div class="field field-period">
-          <label>Срок</label>
-          <button type="button" class="date-range-trigger" data-action="open-range" aria-haspopup="dialog">
-            <span data-range-label>Выберите период</span>
-          </button>
-          <input type="hidden" data-field="start" value="">
-          <input type="hidden" data-field="end" value="">
-          <p class="field-error" data-error="start" hidden></p>
-          <p class="field-error" data-error="end" hidden></p>
-        </div>
-        <div class="field field-color">
-          <label>Цвет</label>
-          <button type="button" class="widget-color-trigger" data-action="open-color" aria-haspopup="dialog">
-            <span class="widget-color-swatch" data-color-swatch aria-hidden="true"></span>
-            <span data-color-label>Выбор цвета виджета</span>
-          </button>
-          <input type="hidden" data-field="color" value="">
-        </div>
-      </div>
-    </article>
-  </template>
-
-  <script src="script.js"></script>
 </body>
 </html>

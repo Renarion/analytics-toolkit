@@ -1,0 +1,97 @@
+/* Home page. Shared tokens and components live in base.css. */
+
+.home-hero {
+  padding: 2.5rem 0 2rem;
+}
+
+.home-hero h1 {
+  max-width: 18ch;
+  font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+}
+
+.home-hero .lead {
+  margin-top: 1rem;
+  font-size: 1.12rem;
+}
+
+.home-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-facts li {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  animation: rise 0.5s ease both;
+}
+
+a.tool-card:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 3px var(--accent-ring), var(--shadow);
+}
+
+.tool-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.tool-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tool-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.tool-card p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.tool-cta {
+  margin-top: auto;
+  padding-top: 0.4rem;
+  color: var(--accent);
+  font-weight: 700;
+}

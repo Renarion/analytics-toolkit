@@ -1,0 +1,69 @@
+/* List formatter page. Shared tokens and components live in base.css. */
+
+.list-tool {
+  display: grid;
+  gap: 1rem;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.75rem;
+  padding: 1rem 1.15rem;
+}
+
+.option {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.options .switch {
+  min-height: 2.35rem;
+}
+
+.io {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.io-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.io-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.5rem;
+}
+
+.io-head h2 {
+  margin-right: auto;
+}
+
+.io-text {
+  flex: 1;
+  min-height: 360px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.io-text[readonly] {
+  background: var(--surface-2);
+}
+
+@media (max-width: 860px) {
+  .io {
+    grid-template-columns: 1fr;
+  }
+
+  .io-text {
+    min-height: 200px;
+  }
+}

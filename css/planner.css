@@ -1,0 +1,491 @@
+/* Weekly planner page. Shared tokens and components live in base.css. */
+
+.planner-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1.25rem;
+  animation: rise 0.45s ease both;
+}
+
+.planner-head h1 {
+  margin: 0 0 0.3rem;
+  font-size: clamp(1.75rem, 3.2vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.week-range {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.planner-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.planner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.progress-card {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 220px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.progress-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.progress-pct {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.progress-count {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.progress-track,
+.day-meter {
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.progress-track {
+  height: 6px;
+}
+
+.progress-track span,
+.day-meter span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.planner {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Days */
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(var(--day-count, 5), minmax(0, 1fr)) auto;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  min-height: 460px;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  animation: rise 0.4s ease both;
+}
+
+.day.is-weekend {
+  background: var(--surface-2);
+}
+
+.day.is-today {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.6rem;
+}
+
+.day-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.day-date {
+  margin-left: 0.4rem;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.day-head-side {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.day-progress {
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+
+.day.is-today .day-progress {
+  color: var(--accent-deep);
+}
+
+.day-meter {
+  height: 3px;
+}
+
+.add-day {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 1.4rem;
+  font-weight: 500;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.add-day:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+/* Task lists (days and backlog) */
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-zone {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.15rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s ease;
+}
+
+.list-zone.is-drop-target {
+  background: var(--accent-soft);
+}
+
+.item {
+  --item-bg: var(--surface);
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--item-bg);
+  transition: border-color 0.12s ease, opacity 0.12s ease, background 0.15s ease;
+}
+
+.item:hover,
+.item:focus-within {
+  border-color: var(--line-strong);
+}
+
+.item.is-critical {
+  /* rgba(240, 68, 56, 0.55) over white, kept opaque so the action overlay can match it. */
+  --item-bg: #f79892;
+  padding-right: 2rem;
+  border-color: rgba(180, 35, 24, 0.55);
+}
+
+.item.is-dragging {
+  opacity: 0.4;
+}
+
+.item.drop-before {
+  box-shadow: 0 -2px 0 var(--accent);
+}
+
+.item.drop-after {
+  box-shadow: 0 2px 0 var(--accent);
+}
+
+.item-check {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 0.12rem 0 0;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.item-check:hover {
+  border-color: var(--accent);
+}
+
+.item-check:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.item-check:checked::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.item-text {
+  display: block;
+  width: 100%;
+  min-height: 1.35em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 550;
+  line-height: 1.4;
+  resize: none;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.item-text:focus {
+  outline: none;
+}
+
+.item-text::placeholder {
+  color: var(--ink-faint);
+}
+
+.item.is-done .item-text {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+}
+
+.item.is-critical.is-done .item-text {
+  color: rgba(14, 23, 38, 0.6);
+}
+
+/* Actions float over the text on hover, so the text can use the full width. */
+.item-actions {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  display: flex;
+  gap: 0.1rem;
+  border-radius: 6px;
+  background: var(--item-bg);
+  box-shadow: -12px 0 10px -4px var(--item-bg);
+}
+
+.item-actions > :not(.is-active) {
+  display: none;
+}
+
+.item:hover .item-actions > *,
+.item:focus-within .item-actions > * {
+  display: grid;
+}
+
+.item:not(:hover):not(:focus-within) .item-actions {
+  box-shadow: none;
+}
+
+.item-btn {
+  display: grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.item-btn:hover {
+  background: rgba(14, 23, 38, 0.06);
+  color: var(--ink);
+}
+
+.item-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.item-btn.is-fire:hover,
+.item-btn.is-fire.is-active {
+  color: #b42318;
+}
+
+.item-btn.is-fire.is-active svg {
+  fill: currentColor;
+}
+
+.item-btn.is-delete:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.item-handle {
+  cursor: grab;
+  letter-spacing: -2px;
+}
+
+.item.is-critical .item-btn {
+  color: rgba(14, 23, 38, 0.6);
+}
+
+.item.is-critical .item-btn.is-fire {
+  color: #7a1a12;
+}
+
+.add-task {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px dashed transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.add-task:hover,
+.add-task:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+/* Backlog and notes */
+
+.planner-bottom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+#backlog {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.notes-input {
+  flex: 1;
+  min-height: 120px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.save-status {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+@media (max-width: 1180px) {
+  .days {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  }
+
+  .day {
+    min-height: 300px;
+  }
+
+  .add-day {
+    width: auto;
+    min-height: 3rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .planner-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .item {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-right: 0.5rem;
+  }
+
+  .item-actions {
+    position: static;
+    box-shadow: none;
+  }
+
+  .item-actions > * {
+    display: grid !important;
+  }
+}

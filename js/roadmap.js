@@ -5,49 +5,67 @@
   const LOADER_MS = 450;
   const DEFAULT_TITLE = "Roadmap";
 
-  // Category row backgrounds — brand teal gradient (see colorSectionBands()).
-  const SECTION_BRAND = {
-    strong: "#0f766e",
-    soft: "#d8f3ef",
-    deep: "#0b5f59",
-  };
+  const UNCATEGORIZED = "Uncategorized";
+  // Keep in sync with maxlength of the task name input in roadmap.html.
+  const TASK_NAME_MAX = 60;
+  const CHART_FONT = "Manrope, system-ui, sans-serif";
 
-  // Task bar colors on the Gantt chart (edit here).
+  function readToken(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return (value || fallback).toLowerCase();
+  }
+
+  // Chart colors come from the --chart-* tokens in css/base.css.
   const CHART_COLORS = {
-    taskFill: "#0f766e",
-    taskStroke: "#084c47",
-    grid: "#d7e0e6",
-    axis: "#8aa0ad",
+    taskFill: readToken("--chart-bar", "#4f46e5"),
+    taskStroke: readToken("--chart-bar-stroke", "#3730a3"),
+    grid: readToken("--chart-grid", "#e4e7ec"),
+    axis: readToken("--chart-axis", "#8a93a3"),
+    bandA: readToken("--chart-band-a", "#eef0ff"),
+    bandB: readToken("--chart-band-b", "#f8f9fb"),
+    ink: readToken("--ink", "#0e1726"),
   };
 
   const WIDGET_COLOR_PRESETS = [
-    { id: "default", label: "По умолчанию", fill: CHART_COLORS.taskFill },
-    { id: "pink", label: "Розовый", fill: "#db2777" },
-    { id: "blue", label: "Синий", fill: "#2563eb" },
-    { id: "red", label: "Красный", fill: "#dc2626" },
-    { id: "green", label: "Зеленый", fill: "#16a34a" },
+    { id: "default", label: "Default", fill: CHART_COLORS.taskFill },
+    { id: "teal", label: "Teal", fill: "#0f766e" },
+    { id: "pink", label: "Pink", fill: "#db2777" },
+    { id: "orange", label: "Orange", fill: "#ea580c" },
+    { id: "green", label: "Green", fill: "#16a34a" },
   ];
 
   const EXAMPLE = {
-    title: "Планы Q3 2026",
+    title: "Q3 2026 plan",
     tasks: [
       {
-        category: "Снижение SCV",
-        name: "Детекция аномалий",
+        category: "Reduce fraud losses",
+        name: "Anomaly detection",
         start: "2026-07-01",
         end: "2026-08-15",
       },
       {
-        category: "Снижение SCV",
-        name: "Правила по телефонам",
+        category: "Reduce fraud losses",
+        name: "Phone number rules",
         start: "2026-07-10",
         end: "2026-08-10",
       },
       {
-        category: "AI автоматизация",
-        name: "AI-детектив",
+        category: "Reduce fraud losses",
+        name: "Rev sharing monitoring, rules and feature optimisation",
+        start: "2026-07-20",
+        end: "2026-09-10",
+      },
+      {
+        category: "AI automation",
+        name: "AI investigator",
         start: "2026-07-15",
         end: "2026-08-15",
+      },
+      {
+        category: "AI automation",
+        name: "Weekly report bot",
+        start: "2026-08-17",
+        end: "2026-08-21",
       },
     ],
   };
@@ -155,7 +173,7 @@
   function getOrderedTasksForChart(taskList) {
     const sections = new Map();
     taskList.forEach((task) => {
-      const sectionName = truncateLabel(task.category, 36) || "Без категории";
+      const sectionName = truncateLabel(task.category, 36) || UNCATEGORIZED;
       if (!sections.has(sectionName)) {
         sections.set(sectionName, []);
       }
@@ -195,30 +213,38 @@
     return Math.max(1, Math.round((end - start) / 86400000) + 1);
   }
 
+  // Mermaid applies `weekday monday` only to an explicit week-based tickInterval,
+  // so the interval is always set instead of relying on automatic ticks.
+  function pickTickInterval(spanDays) {
+    if (spanDays <= 21) return "1day";
+    if (spanDays <= 120) return "1week";
+    if (spanDays <= 240) return "2week";
+    return "1month";
+  }
+
   function getMinTimelineWidth(spanDays) {
-    const MIN_TICK_GAP = 52;
-    let tickCount;
-
-    // Mermaid uses daily ticks on short ranges and weekly+ on longer ones.
-    if (spanDays <= 45) {
-      tickCount = Math.max(spanDays + 4, 7);
-    } else if (spanDays <= 120) {
-      tickCount = Math.ceil(spanDays / 7) + 2;
-    } else if (spanDays <= 210) {
-      tickCount = Math.ceil(spanDays / 14) + 2;
-    } else {
-      tickCount = Math.ceil(spanDays / 30) + 2;
-    }
-
+    const MIN_TICK_GAP = 60;
+    const daysPerTick = { "1day": 1, "1week": 7, "2week": 14, "1month": 30 }[
+      pickTickInterval(spanDays)
+    ];
+    const tickCount = Math.max(7, Math.ceil(spanDays / daysPerTick) + 2);
     return tickCount * MIN_TICK_GAP;
+  }
+
+  function getSpanDays(taskList) {
+    const starts = taskList.map((task) => task.start).filter(Boolean).sort();
+    const ends = taskList.map((task) => task.end).filter(Boolean).sort();
+    return starts.length && ends.length
+      ? daysBetween(starts[0], ends[ends.length - 1])
+      : 30;
   }
 
   function measureCategoryWidth(text) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return String(text || "").length * 10;
-    // Match sectionTitle styling (styles.css + emphasizeDiagramText).
-    ctx.font = '700 16px "DM Sans", "Segoe UI", sans-serif';
+    // Match sectionTitle styling (roadmap.css + emphasizeDiagramText).
+    ctx.font = `700 16px ${CHART_FONT}`;
     return ctx.measureText(String(text || "")).width;
   }
 
@@ -227,24 +253,18 @@
     const LEFT_INSET = 12;
     const CATEGORY_GAP = 20;
     const categories = taskList.map(
-      (task) => truncateLabel(task.category, 36) || "Без категории"
+      (task) => truncateLabel(task.category, 36) || UNCATEGORIZED
     );
     const longestWidth = categories.reduce(
       (max, label) => Math.max(max, measureCategoryWidth(label)),
-      measureCategoryWidth("Категория")
+      measureCategoryWidth("Category")
     );
     const leftPadding = Math.min(
       420,
       Math.max(96, Math.ceil(LEFT_INSET + longestWidth + CATEGORY_GAP))
     );
     const rightPadding = 32;
-
-    const starts = taskList.map((task) => task.start).filter(Boolean).sort();
-    const ends = taskList.map((task) => task.end).filter(Boolean).sort();
-    const spanDays =
-      starts.length && ends.length
-        ? daysBetween(starts[0], ends[ends.length - 1])
-        : 30;
+    const spanDays = getSpanDays(taskList);
 
     const scrollEl = document.getElementById("diagram-scroll");
     const pageBudget = Math.min(window.innerWidth - 32, 1560);
@@ -347,14 +367,19 @@
   function formatDisplayDate(isoDate) {
     if (!isoDate) return "";
     const [year, month, day] = isoDate.split("-");
-    if (!year || !month || !day) return isoDate;
-    return `${day}.${month}.${year}`;
+    const monthIndex = Number.parseInt(month, 10) - 1;
+    if (!year || !day || !MONTH_SHORT[monthIndex]) return isoDate;
+    return `${Number.parseInt(day, 10)} ${MONTH_SHORT[monthIndex]} ${year}`;
   }
 
   function formatRangeLabel(start, end) {
-    if (start && end) return `${formatDisplayDate(start)} — ${formatDisplayDate(end)}`;
-    if (start) return `${formatDisplayDate(start)} — …`;
-    return "Выберите период";
+    if (start && end && start.slice(0, 4) === end.slice(0, 4)) {
+      const startShort = formatDisplayDate(start).replace(/ \d{4}$/, "");
+      return `${startShort} – ${formatDisplayDate(end)}`;
+    }
+    if (start && end) return `${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+    if (start) return `${formatDisplayDate(start)} – …`;
+    return "Pick dates";
   }
 
   function updateRangeLabel(card) {
@@ -364,6 +389,7 @@
     const trigger = card.querySelector("[data-action='open-range']");
     if (!label || !trigger) return;
     label.textContent = formatRangeLabel(start, end);
+    trigger.title = start && end ? label.textContent : "";
     trigger.classList.toggle("is-placeholder", !(start && end));
   }
 
@@ -381,19 +407,20 @@
   }
 
   const MONTH_NAMES = [
-    "Январь",
-    "Февраль",
-    "Март",
-    "Апрель",
-    "Май",
-    "Июнь",
-    "Июль",
-    "Август",
-    "Сентябрь",
-    "Октябрь",
-    "Ноябрь",
-    "Декабрь",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
+  const MONTH_SHORT = MONTH_NAMES.map((name) => name.slice(0, 3));
 
   const rangePicker = {
     taskId: null,
@@ -494,11 +521,11 @@
 
     monthLabel.textContent = `${MONTH_NAMES[rangePicker.viewMonth]} ${rangePicker.viewYear}`;
     if (!rangePicker.draftStart) {
-      stepLabel.textContent = "Выберите дату начала";
+      stepLabel.textContent = "Pick a start date";
     } else if (!rangePicker.draftEnd) {
-      stepLabel.textContent = "Выберите дату окончания";
+      stepLabel.textContent = "Pick an end date";
     } else {
-      stepLabel.textContent = `${formatDisplayDate(rangePicker.draftStart)} — ${formatDisplayDate(rangePicker.draftEnd)}`;
+      stepLabel.textContent = `${formatDisplayDate(rangePicker.draftStart)} – ${formatDisplayDate(rangePicker.draftEnd)}`;
     }
 
     grid.replaceChildren();
@@ -811,7 +838,7 @@
     if (!rgbInput) return;
     const parsed = parseColorInput(rgbInput.value);
     if (!parsed) {
-      setColorRgbError("Введите цвет как rgb(15, 118, 110) или #0f766e");
+      setColorRgbError("Use rgb(79, 70, 229) or #4f46e5");
       return;
     }
     colorPicker.draftColor =
@@ -1019,7 +1046,7 @@
     }
 
     if (!data.tasks.length) {
-      setFormError("Добавьте хотя бы одну задачу");
+      setFormError("Add at least one task");
       return { ok: false, errors: ["empty"] };
     }
 
@@ -1028,10 +1055,10 @@
     );
 
     if (filledTasks.length === 0) {
-      setFormError("Добавьте хотя бы одну задачу");
+      setFormError("Add at least one task");
       data.tasks.forEach((task) => {
-        setTaskFieldError(task.id, "category", "Заполните задачу");
-        setTaskFieldError(task.id, "name", "Заполните задачу");
+        setTaskFieldError(task.id, "category", "Fill in the task");
+        setTaskFieldError(task.id, "name", "Fill in the task");
       });
       return { ok: false, errors: ["empty"] };
     }
@@ -1041,29 +1068,29 @@
       if (!hasAny) return;
 
       if (!task.category) {
-        setTaskFieldError(task.id, "category", "Укажите категорию");
+        setTaskFieldError(task.id, "category", "Add a category");
         errors.push("category");
       }
       if (!task.name) {
-        setTaskFieldError(task.id, "name", "Укажите название задачи");
+        setTaskFieldError(task.id, "name", "Add a task name");
         errors.push("name");
       }
       if (!task.start) {
-        setTaskFieldError(task.id, "start", "Укажите дату начала");
+        setTaskFieldError(task.id, "start", "Pick a start date");
         errors.push("start");
       }
       if (!task.end) {
-        setTaskFieldError(task.id, "end", "Укажите дату окончания");
+        setTaskFieldError(task.id, "end", "Pick an end date");
         errors.push("end");
       }
       if (task.start && task.end && task.end < task.start) {
-        setTaskFieldError(task.id, "end", "Дата окончания не может быть раньше начала");
+        setTaskFieldError(task.id, "end", "End date can't be before the start date");
         errors.push("range");
       }
     });
 
     if (errors.length) {
-      setFormError("Исправьте выделенные поля и попробуйте снова");
+      setFormError("Fix the highlighted fields and try again");
       return { ok: false, errors };
     }
 
@@ -1077,12 +1104,12 @@
   }
 
   function generateMermaidCode(title, taskList) {
-    const safeTitle = truncateLabel(title, 60) || DEFAULT_TITLE;
+    const safeTitle = truncateLabel(title, 120) || DEFAULT_TITLE;
     const { leftPadding, useWidth } = estimateChartLayout(taskList);
     const sections = new Map();
 
     taskList.forEach((task) => {
-      const sectionName = truncateLabel(task.category, 36) || "Без категории";
+      const sectionName = truncateLabel(task.category, 36) || UNCATEGORIZED;
       if (!sections.has(sectionName)) {
         sections.set(sectionName, []);
       }
@@ -1094,7 +1121,8 @@
       "gantt",
       `    title ${safeTitle}`,
       "    dateFormat YYYY-MM-DD",
-      "    axisFormat %d.%m",
+      "    axisFormat %d %b",
+      `    tickInterval ${pickTickInterval(getSpanDays(taskList))}`,
       "    weekday monday",
       "    todayMarker off",
       "",
@@ -1105,7 +1133,8 @@
       [...sectionTasks]
         .sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end))
         .forEach((task) => {
-        const taskName = truncateLabel(task.name, 40) || "Задача";
+        // Full name on purpose: wrapTaskBarLabels() fits it into the bar after render.
+        const taskName = sanitizeMermaidText(task.name) || "Task";
         // Mermaid end date is exclusive for day-level ranges; keep inclusive UX by adding one day.
         const endExclusive = addOneDay(task.end);
         lines.push(`    ${taskName} :${task.start}, ${endExclusive}`);
@@ -1249,7 +1278,7 @@
 
       parsedTasks.push({
         category: currentSection,
-        name,
+        name: name.slice(0, TASK_NAME_MAX),
         start: parsed.start,
         end: parsed.end,
       });
@@ -1284,7 +1313,7 @@
     setMermaidImportNote("");
 
     if (!code) {
-      setMermaidImportError("Вставьте код Mermaid");
+      setMermaidImportError("Paste Mermaid code first");
       return;
     }
 
@@ -1306,17 +1335,17 @@
 
       if (parsed.skipped.length) {
         setMermaidImportNote(
-          `Импортировано ${parsed.tasks.length} задач. Не удалось разобрать: ${parsed.skipped.join(", ")}.`
+          `Imported ${parsed.tasks.length} tasks. Couldn't parse: ${parsed.skipped.join(", ")}.`
         );
       }
     } else {
       setMermaidImportNote(
-        "Задачи из кода не распознаны — диаграмма будет построена без обновления полей."
+        "No tasks recognised — the chart is rendered as is, without updating the fields."
       );
     }
 
     showLoader(true);
-    await wait(LOADER_MS);
+    await Promise.all([wait(LOADER_MS), waitForFonts()]);
 
     const renderCode = parsed.tasks.length
       ? generateMermaidCode(parsed.title, tasks)
@@ -1340,13 +1369,22 @@
     if (!ok) return;
 
     hasBuiltOnce = true;
-    els.buildBtn.textContent = "Обновить roadmap";
+    els.buildBtn.textContent = "Update roadmap";
     els.resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
     saveToLocalStorage();
   }
 
   function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Text is measured to wrap bar labels, so the web font must be ready first.
+  function waitForFonts() {
+    if (!document.fonts?.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load(`600 15px ${CHART_FONT}`),
+      document.fonts.load(`700 16px ${CHART_FONT}`),
+    ]).catch(() => {});
   }
 
   async function renderRoadmap(mermaidCode) {
@@ -1373,13 +1411,14 @@
       colorSectionBands();
       wrapTaskBarLabels();
       fitDiagramWidth();
+      applyZoom();
       return true;
     } catch (error) {
       console.error(error);
       if (token !== renderToken) return false;
       els.diagramContainer.replaceChildren();
       setRenderError(
-        "Не удалось построить диаграмму. Проверьте названия и даты задач"
+        "Couldn't build the chart. Check task names and dates"
       );
       lastMermaidCode = "";
       return false;
@@ -1391,15 +1430,90 @@
     if (!svg) return;
 
     const size = measureSvgSize(svg);
-    els.diagramContainer.style.minWidth = `${size.width}px`;
     svg.setAttribute("width", String(size.width));
     svg.setAttribute("height", String(size.height));
     if (!svg.getAttribute("viewBox")) {
       svg.setAttribute("viewBox", `0 0 ${size.width} ${size.height}`);
     }
+    svg.dataset.baseWidth = String(size.width);
+    svg.dataset.baseHeight = String(size.height);
     svg.style.maxWidth = "none";
-    svg.style.width = `${size.width}px`;
-    svg.style.height = `${size.height}px`;
+  }
+
+  const ZOOM_MIN = 0.2;
+  const ZOOM_MAX = 2;
+  const ZOOM_STEPS = [0.2, 0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+  let zoom = 1;
+
+  // Zoom only changes the displayed size; exports keep using the full-size viewBox.
+  function applyZoom() {
+    const svg = getSvgElement();
+    const label = document.getElementById("zoom-reset-btn");
+    if (label) label.textContent = `${Math.round(zoom * 100)}%`;
+    if (!svg) return;
+
+    const baseWidth = Number(svg.dataset.baseWidth) || measureSvgSize(svg).width;
+    const baseHeight = Number(svg.dataset.baseHeight) || measureSvgSize(svg).height;
+    const width = Math.round(baseWidth * zoom);
+    const height = Math.round(baseHeight * zoom);
+    svg.style.width = `${width}px`;
+    svg.style.height = `${height}px`;
+    els.diagramContainer.style.minWidth = `${width}px`;
+  }
+
+  function setZoom(next, anchorClientX) {
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next));
+    if (Math.abs(clamped - zoom) < 0.001) return;
+
+    const scroller = document.getElementById("diagram-scroll");
+    const rect = scroller?.getBoundingClientRect();
+    const anchorX =
+      rect && Number.isFinite(anchorClientX) ? anchorClientX - rect.left : (rect?.width || 0) / 2;
+    const contentX = scroller ? (scroller.scrollLeft + anchorX) / zoom : 0;
+
+    zoom = clamped;
+    applyZoom();
+
+    if (scroller) scroller.scrollLeft = Math.max(0, contentX * zoom - anchorX);
+  }
+
+  function stepZoom(direction) {
+    const next =
+      direction > 0
+        ? ZOOM_STEPS.find((step) => step > zoom + 0.001)
+        : [...ZOOM_STEPS].reverse().find((step) => step < zoom - 0.001);
+    setZoom(next ?? zoom);
+  }
+
+  function fitZoomToWidth() {
+    const svg = getSvgElement();
+    const scroller = document.getElementById("diagram-scroll");
+    if (!svg || !scroller) return;
+    const style = getComputedStyle(els.diagramContainer);
+    const padding = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+    const available = scroller.clientWidth - padding - 2;
+    const baseWidth = Number(svg.dataset.baseWidth) || measureSvgSize(svg).width;
+    setZoom(Math.min(1, available / baseWidth));
+    scroller.scrollLeft = 0;
+  }
+
+  function bindZoomControls() {
+    document.getElementById("zoom-in-btn")?.addEventListener("click", () => stepZoom(1));
+    document.getElementById("zoom-out-btn")?.addEventListener("click", () => stepZoom(-1));
+    document.getElementById("zoom-reset-btn")?.addEventListener("click", () => setZoom(1));
+    document.getElementById("zoom-fit-btn")?.addEventListener("click", fitZoomToWidth);
+
+    // Ctrl/⌘ + wheel and trackpad pinch (reported as ctrl+wheel) zoom around the cursor.
+    document.getElementById("diagram-scroll")?.addEventListener(
+      "wheel",
+      (event) => {
+        if (!(event.ctrlKey || event.metaKey) || !getSvgElement()) return;
+        event.preventDefault();
+        const factor = Math.exp(-event.deltaY * 0.0025);
+        setZoom(zoom * factor, event.clientX);
+      },
+      { passive: false }
+    );
   }
 
   function emphasizeAxisDates() {
@@ -1457,8 +1571,8 @@
       rect.setAttribute("fill", fill);
       rect.setAttribute("stroke", stroke);
       rect.setAttribute("stroke-width", "1.75");
-      rect.setAttribute("rx", "2");
-      rect.setAttribute("ry", "2");
+      rect.setAttribute("rx", "4");
+      rect.setAttribute("ry", "4");
       rect.style.setProperty("fill", fill, "important");
       rect.style.setProperty("stroke", stroke, "important");
       rect.style.setProperty("stroke-width", "1.75px", "important");
@@ -1472,10 +1586,9 @@
     const styleFill = String(rect.style?.fill || "").toLowerCase();
     return (
       /\btask\b/i.test(cls) ||
-      fillAttr === CHART_COLORS.taskFill.toLowerCase() ||
-      styleFill === CHART_COLORS.taskFill.toLowerCase() ||
-      fillAttr === "#0b5f59" ||
-      fillAttr === "#5b8a84"
+      fillAttr === CHART_COLORS.taskFill ||
+      styleFill === CHART_COLORS.taskFill ||
+      fillAttr === CHART_COLORS.taskStroke
     );
   }
 
@@ -1527,12 +1640,12 @@
 
     const variants = [
       [
-        { color: SECTION_BRAND.strong, opacity: 0.62 },
-        { color: SECTION_BRAND.soft, opacity: 0.48 },
+        { color: CHART_COLORS.bandA, opacity: 1 },
+        { color: CHART_COLORS.bandA, opacity: 0.7 },
       ],
       [
-        { color: SECTION_BRAND.soft, opacity: 0.92 },
-        { color: "#ffffff", opacity: 0.2 },
+        { color: CHART_COLORS.bandB, opacity: 1 },
+        { color: "#ffffff", opacity: 0.6 },
       ],
     ];
 
@@ -1567,7 +1680,7 @@
     const probe = document.createElementNS("http://www.w3.org/2000/svg", "text");
     probe.setAttribute("font-size", String(fontSize));
     probe.setAttribute("font-weight", String(fontWeight));
-    probe.setAttribute("font-family", "DM Sans, Segoe UI, sans-serif");
+    probe.setAttribute("font-family", CHART_FONT);
     probe.textContent = text;
     svg.appendChild(probe);
     let width = 0;
@@ -1618,49 +1731,63 @@
     return lines;
   }
 
-  function planBarLabel(svg, text, maxWidth, fontWeight) {
-    const FONT_SIZE = 15;
-    const LINE_HEIGHT = 17;
-    const PAD_Y = 10;
-    const MAX_LINES = 4;
+  function planBarLabel(svg, text, maxWidth, fontSize, fontWeight) {
+    const lineHeight = fontSize + 3;
+    const PAD_Y = 12;
 
-    let lines = wrapWordsToWidth(svg, text, maxWidth, FONT_SIZE, fontWeight);
-    if (lines.length > MAX_LINES) {
-      lines = lines.slice(0, MAX_LINES);
-      let lastLine = lines[MAX_LINES - 1] || "";
-      while (lastLine.length > 1) {
-        const candidate = `${lastLine.trimEnd()}…`;
-        if (measureTextWidth(svg, candidate, FONT_SIZE, fontWeight) <= maxWidth) {
-          lines[MAX_LINES - 1] = candidate;
-          break;
-        }
-        lastLine = lastLine.slice(0, -1).trimEnd();
-      }
-    }
+    // Never truncate: the bar grows vertically until every line fits.
+    const lines = wrapWordsToWidth(svg, text, maxWidth, fontSize, fontWeight);
+    const neededHeight = Math.max(30, lines.length * lineHeight + PAD_Y);
 
-    const neededHeight = Math.max(
-      30,
-      lines.length * LINE_HEIGHT + PAD_Y
-    );
-
-    return { lines, fontSize: FONT_SIZE, lineHeight: LINE_HEIGHT, neededHeight };
+    return { lines, fontSize, fontWeight, lineHeight, neededHeight };
   }
 
-  function applyBarLabel(label, rect, lines, fontSize, lineHeight, fontWeight) {
+  function widestWord(svg, text, fontSize, fontWeight) {
+    return text
+      .split(/\s+/)
+      .filter(Boolean)
+      .reduce((max, word) => Math.max(max, measureTextWidth(svg, word, fontSize, fontWeight)), 0);
+  }
+
+  function applyBarLabel(label, rect, plan) {
+    const { lines, fontSize, fontWeight, lineHeight, placement } = plan;
     const x = Number(rect.getAttribute("x") || 0);
     const y = Number(rect.getAttribute("y") || 0);
     const w = Number(rect.getAttribute("width") || 0);
     const h = Number(rect.getAttribute("height") || 0);
-    const cx = x + w / 2;
+
+    let anchorX = x + w / 2;
+    let textAnchor = "middle";
+    let fill = "#ffffff";
+    if (placement === "right") {
+      anchorX = x + w + OUTSIDE_LABEL_GAP;
+      textAnchor = "start";
+      fill = CHART_COLORS.ink;
+    } else if (placement === "left") {
+      anchorX = x - OUTSIDE_LABEL_GAP;
+      textAnchor = "end";
+      fill = CHART_COLORS.ink;
+    }
+
+    const className = {
+      inside: "taskText",
+      right: "taskTextOutsideRight",
+      left: "taskTextOutsideLeft",
+    }[placement];
 
     while (label.firstChild) label.removeChild(label.firstChild);
-    label.setAttribute("class", "taskText");
-    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("class", className);
+    // Mermaid's class CSS sets text-anchor too and would win over the attribute.
+    label.setAttribute("text-anchor", textAnchor);
+    label.style.setProperty("text-anchor", textAnchor, "important");
     label.setAttribute("dominant-baseline", "central");
     label.setAttribute("font-size", String(fontSize));
     label.setAttribute("font-weight", String(fontWeight));
-    label.setAttribute("fill", "#ffffff");
-    label.setAttribute("x", String(cx));
+    label.style.setProperty("font-size", `${fontSize}px`, "important");
+    label.style.setProperty("font-weight", String(fontWeight), "important");
+    label.setAttribute("fill", fill);
+    label.style.setProperty("fill", fill, "important");
+    label.setAttribute("x", String(anchorX));
 
     const blockHeight = (lines.length - 1) * lineHeight;
     const firstY = y + h / 2 - blockHeight / 2;
@@ -1668,7 +1795,7 @@
 
     lines.forEach((line, index) => {
       const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-      tspan.setAttribute("x", String(cx));
+      tspan.setAttribute("x", String(anchorX));
       tspan.setAttribute("y", String(firstY + index * lineHeight));
       tspan.textContent = line;
       label.appendChild(tspan);
@@ -1764,12 +1891,39 @@
     });
   }
 
+  const LABEL_FONT = 15;
+  const LABEL_FONT_SMALL = 13;
+  const LABEL_WEIGHT = 600;
+  const OUTSIDE_LABEL_WEIGHT = 700;
+  // Below this inner width even hard-wrapped text is unreadable, so the label goes outside.
+  const MIN_HARD_WRAP_WIDTH = 44;
+  const OUTSIDE_LABEL_MAX_WIDTH = 240;
+  const OUTSIDE_LABEL_GAP = 8;
+
+  // Inside the bar whenever possible: full size, then smaller font, then hard wrap.
+  function pickLabelLayout(svg, text, barWidth) {
+    const roomy = barWidth - 20;
+    if (widestWord(svg, text, LABEL_FONT, LABEL_WEIGHT) <= roomy) {
+      return { placement: "inside", fontSize: LABEL_FONT, fontWeight: LABEL_WEIGHT, maxWidth: roomy };
+    }
+    const tight = barWidth - 10;
+    if (
+      widestWord(svg, text, LABEL_FONT_SMALL, LABEL_WEIGHT) <= tight ||
+      tight >= MIN_HARD_WRAP_WIDTH
+    ) {
+      return { placement: "inside", fontSize: LABEL_FONT_SMALL, fontWeight: LABEL_WEIGHT, maxWidth: tight };
+    }
+    return {
+      placement: "outside",
+      fontSize: LABEL_FONT,
+      fontWeight: OUTSIDE_LABEL_WEIGHT,
+      maxWidth: OUTSIDE_LABEL_MAX_WIDTH,
+    };
+  }
+
   function wrapTaskBarLabels() {
     const svg = els.diagramContainer.querySelector("svg");
     if (!svg) return;
-
-    const PAD_X = 10;
-    const FONT_WEIGHT = 600;
 
     const bars = [...svg.querySelectorAll("rect")]
       .filter(isTaskRect)
@@ -1777,6 +1931,12 @@
         (a, b) =>
           Number(a.getAttribute("y") || 0) - Number(b.getAttribute("y") || 0)
       );
+
+    const svgWidth =
+      svg.viewBox?.baseVal?.width || Number(svg.getAttribute("width")) || Infinity;
+    const leftEdge = Math.min(
+      ...bars.map((rect) => Number(rect.getAttribute("x") || 0))
+    );
 
     const labels = [
       ...svg.querySelectorAll(
@@ -1817,10 +1977,21 @@
       const raw = (label.textContent || "").replace(/\s+/g, " ").trim();
       if (!raw) return;
 
-      const maxWidth = Math.max(24, w - PAD_X * 2);
-      const plan = planBarLabel(svg, raw, maxWidth, FONT_WEIGHT);
+      const layout = pickLabelLayout(svg, raw, w);
+      let { placement } = layout;
+      if (placement === "outside") {
+        const textWidth = Math.min(
+          layout.maxWidth,
+          measureTextWidth(svg, raw, layout.fontSize, layout.fontWeight)
+        );
+        const fitsRight = x + w + OUTSIDE_LABEL_GAP + textWidth <= svgWidth - 8;
+        const fitsLeft = x - OUTSIDE_LABEL_GAP - textWidth >= leftEdge;
+        placement = fitsRight || !fitsLeft ? "right" : "left";
+      }
+
+      const plan = planBarLabel(svg, raw, layout.maxWidth, layout.fontSize, layout.fontWeight);
       label.dataset.planned = "1";
-      plans.push({ rect, label, ...plan });
+      plans.push({ rect, label, placement, ...plan });
     });
 
     // Expand from bottom to top so earlier expansions do not invalidate upper bars.
@@ -1840,14 +2011,7 @@
         totalExtra += extra;
       }
 
-      applyBarLabel(
-        plan.label,
-        rect,
-        plan.lines,
-        plan.fontSize,
-        plan.lineHeight,
-        FONT_WEIGHT
-      );
+      applyBarLabel(plan.label, rect, plan);
     }
 
     if (totalExtra > 0) {
@@ -1950,7 +2114,7 @@
     lastRenderedTasks = validation.data.tasks;
 
     showLoader(true);
-    await wait(LOADER_MS);
+    await Promise.all([wait(LOADER_MS), waitForFonts()]);
 
     const ok = await renderRoadmap(mermaidCode);
     showLoader(false);
@@ -1958,7 +2122,7 @@
     if (!ok) return;
 
     hasBuiltOnce = true;
-    els.buildBtn.textContent = "Обновить roadmap";
+    els.buildBtn.textContent = "Update roadmap";
     els.resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
     saveToLocalStorage();
   }
@@ -1981,7 +2145,7 @@
   function downloadSVG() {
     const svg = getSvgElement();
     if (!svg) {
-      setRenderError("Сначала постройте roadmap");
+      setRenderError("Build the roadmap first");
       return;
     }
 
@@ -1995,7 +2159,7 @@
   function downloadPNG() {
     const svg = getSvgElement();
     if (!svg) {
-      setRenderError("Сначала постройте roadmap");
+      setRenderError("Build the roadmap first");
       return;
     }
 
@@ -2023,7 +2187,7 @@
         canvas.toBlob((blob) => {
           URL.revokeObjectURL(url);
           if (!blob) {
-            setRenderError("Не удалось сохранить PNG. Попробуйте скачать SVG.");
+            setRenderError("Couldn't save the PNG. Try downloading SVG instead.");
             return;
           }
           triggerDownload(blob, filename);
@@ -2031,13 +2195,13 @@
       } catch (error) {
         console.error(error);
         URL.revokeObjectURL(url);
-        setRenderError("Не удалось сохранить PNG. Попробуйте скачать SVG.");
+        setRenderError("Couldn't save the PNG. Try downloading SVG instead.");
       }
     };
 
     image.onerror = () => {
       URL.revokeObjectURL(url);
-      setRenderError("Не удалось сохранить PNG. Попробуйте скачать SVG.");
+      setRenderError("Couldn't save the PNG. Try downloading SVG instead.");
     };
 
     image.src = url;
@@ -2045,7 +2209,7 @@
 
   async function copyMermaidCode() {
     if (!lastMermaidCode) {
-      setRenderError("Сначала постройте roadmap");
+      setRenderError("Build the roadmap first");
       return;
     }
 
@@ -2057,7 +2221,7 @@
       }, 1800);
     } catch (error) {
       console.error(error);
-      window.prompt("Скопируйте код вручную:", lastMermaidCode);
+      window.prompt("Copy the code manually:", lastMermaidCode);
     }
   }
 
@@ -2092,7 +2256,7 @@
       els.title.value = typeof data.title === "string" ? data.title : "";
       // Diagram is not restored automatically; keep the primary button as "build".
       hasBuiltOnce = false;
-      els.buildBtn.textContent = "Построить roadmap";
+      els.buildBtn.textContent = "Build roadmap";
 
       const loadedTasks = Array.isArray(data.tasks) ? data.tasks : [];
       tasks = loadedTasks.map((task) =>
@@ -2127,7 +2291,7 @@
     lastMermaidCode = "";
     lastRenderedTasks = [];
     renderToken += 1;
-    els.buildBtn.textContent = "Построить roadmap";
+    els.buildBtn.textContent = "Build roadmap";
     els.resultSection.hidden = true;
     els.diagramContainer.replaceChildren();
     els.mermaidImportInput.value = "";
@@ -2146,7 +2310,7 @@
 
   function clearAll() {
     const confirmed = window.confirm(
-      "Вы уверены? Все введенные задачи будут удалены"
+      "Are you sure? All tasks will be deleted"
     );
     if (!confirmed) return;
     resetToInitialState();
@@ -2164,7 +2328,7 @@
   function initMermaid() {
     if (typeof mermaid === "undefined") {
       setFormError(
-        "Не удалось загрузить библиотеку диаграмм. Проверьте подключение к интернету."
+        "Couldn't load the chart library. Check your internet connection."
       );
       return false;
     }
@@ -2174,33 +2338,35 @@
       securityLevel: "strict",
       theme: "base",
       themeVariables: {
-        fontFamily: "DM Sans, Segoe UI, sans-serif",
-        primaryColor: "#d8f3ef",
-        primaryTextColor: "#152028",
+        fontFamily: CHART_FONT,
+        primaryColor: CHART_COLORS.bandA,
+        primaryTextColor: CHART_COLORS.ink,
         primaryBorderColor: CHART_COLORS.taskFill,
         lineColor: CHART_COLORS.axis,
-        sectionBkgColor: "rgba(15, 118, 110, 0.48)",
-        altSectionBkgColor: "rgba(216, 243, 239, 0.82)",
+        sectionBkgColor: CHART_COLORS.bandA,
+        altSectionBkgColor: CHART_COLORS.bandB,
         gridColor: CHART_COLORS.grid,
         taskBkgColor: CHART_COLORS.taskFill,
         taskBorderColor: CHART_COLORS.taskStroke,
         taskTextColor: "#ffffff",
         taskTextLightColor: "#ffffff",
-        taskTextOutsideColor: "#152028",
-        taskTextDarkColor: "#152028",
-        activeTaskBkgColor: "#0b5f59",
-        activeTaskBorderColor: "#063d39",
-        doneTaskBkgColor: "#5b8a84",
-        doneTaskBorderColor: "#3f6c67",
-        critBkgColor: "#b42318",
-        critBorderColor: "#912018",
-        todayLineColor: "#152028",
+        taskTextOutsideColor: CHART_COLORS.ink,
+        taskTextDarkColor: CHART_COLORS.ink,
+        activeTaskBkgColor: CHART_COLORS.taskStroke,
+        activeTaskBorderColor: CHART_COLORS.taskStroke,
+        doneTaskBkgColor: CHART_COLORS.axis,
+        doneTaskBorderColor: CHART_COLORS.axis,
+        critBkgColor: "#d92d20",
+        critBorderColor: "#b42318",
+        todayLineColor: CHART_COLORS.ink,
       },
       themeCSS: `
         .task { stroke: ${CHART_COLORS.taskStroke} !important; stroke-width: 1.75px !important; }
         rect.task { stroke: ${CHART_COLORS.taskStroke} !important; stroke-width: 1.75px !important; }
-        .section0 { fill: rgba(15, 118, 110, 0.48) !important; }
-        .section1 { fill: rgba(216, 243, 239, 0.82) !important; }
+        .section0 { fill: ${CHART_COLORS.bandA} !important; }
+        .section1 { fill: ${CHART_COLORS.bandB} !important; }
+        .titleText { fill: ${CHART_COLORS.ink} !important; }
+        .sectionTitle { fill: ${CHART_COLORS.ink} !important; }
       `,
       gantt: {
         titleTopMargin: 30,
@@ -2228,7 +2394,7 @@
         console.error(error);
         showLoader(false);
         setRenderError(
-          "Не удалось построить диаграмму. Проверьте названия и даты задач"
+          "Couldn't build the chart. Check task names and dates"
         );
       });
     });
@@ -2243,7 +2409,7 @@
       handleMermaidImport().catch((error) => {
         console.error(error);
         showLoader(false);
-        setMermaidImportError("Не удалось построить диаграмму из Mermaid-кода");
+        setMermaidImportError("Couldn't build a chart from this Mermaid code");
       });
     });
     els.mermaidImportInput.addEventListener("input", saveToLocalStorage);
@@ -2255,6 +2421,7 @@
     bindEvents();
     bindRangePickerControls();
     bindColorPickerControls();
+    bindZoomControls();
 
     const restored = loadFromLocalStorage();
     if (!restored) {

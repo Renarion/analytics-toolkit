@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roadmap · Analytics Toolkit</title>
+  <meta name="description" content="Build clean roadmaps and Gantt charts in your browser. No sign-up, no backend.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/roadmap.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h9M8 12h10M6 18h7"/></svg>
+        </span>
+        <span class="brand-name">Analytics Toolkit</span>
+      </a>
+      <nav class="nav-links" aria-label="Tools">
+        <a href="roadmap.html" aria-current="page">Roadmap</a>
+        <a href="planner.html">Weekly planner</a>
+        <a href="list.html">List formatter</a>
+      </nav>
+      <span class="nav-spacer"></span>
+      <a class="nav-github" href="https://github.com/Renarion/roadmap-toolkit" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="page">
+    <header class="page-head roadmap-head">
+      <p class="eyebrow">Roadmap</p>
+      <h1>A roadmap in a couple of minutes</h1>
+      <p class="lead">Add categories, tasks and dates — the Gantt chart is built automatically. Export to SVG, PNG or Mermaid.</p>
+    </header>
+
+    <main class="layout">
+      <div class="form-shell">
+        <section class="panel" aria-labelledby="form-heading">
+          <div class="panel-head">
+            <h2 id="form-heading">Roadmap data</h2>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-ghost" id="load-example-btn">Load example</button>
+              <button type="button" class="btn btn-ghost btn-danger-text" id="clear-all-btn">Clear all</button>
+            </div>
+          </div>
+
+          <div class="field field-title">
+            <label for="diagram-title">Roadmap title</label>
+            <input type="text" id="diagram-title" name="diagram-title" placeholder="e.g. Q3 2026 plan" autocomplete="off" maxlength="120">
+            <p class="field-error" id="title-error" hidden></p>
+          </div>
+
+          <div class="tasks-header">
+            <h3>Tasks</h3>
+            <p class="hint">Tasks with the same category are grouped into one section on the chart.</p>
+          </div>
+
+          <div id="tasks-container" class="tasks-container" aria-live="polite"></div>
+          <p class="form-error" id="form-error" hidden></p>
+
+          <div class="form-footer">
+            <button type="button" class="btn btn-secondary" id="add-task-btn">+ Add task</button>
+            <button type="button" class="btn btn-primary" id="build-btn">Build roadmap</button>
+          </div>
+        </section>
+
+        <details class="panel mermaid-import-panel">
+          <summary class="mermaid-import-summary">
+            <span>Import Mermaid code</span>
+            <span class="mermaid-import-chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="mermaid-import-body">
+            <p class="hint">Paste a Mermaid gantt chart — the fields above are filled in automatically so you can keep editing.</p>
+            <div class="field">
+              <label for="mermaid-import-input">Mermaid code</label>
+              <textarea id="mermaid-import-input" class="mermaid-import-input" rows="10" placeholder="gantt&#10;    title Q3 2026 plan&#10;    dateFormat YYYY-MM-DD&#10;    section Category&#10;    Task :2026-07-01, 2026-08-16"></textarea>
+              <p class="field-error" id="mermaid-import-error" hidden></p>
+              <p class="mermaid-import-note" id="mermaid-import-note" hidden></p>
+            </div>
+            <div>
+              <button type="button" class="btn btn-secondary" id="mermaid-import-btn">Render from Mermaid</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <section class="panel result" id="result-section" hidden>
+        <div class="panel-head result-head">
+          <h2>Chart</h2>
+          <div class="result-tools">
+            <div class="btn-group" role="group" aria-label="Zoom">
+              <button type="button" class="btn btn-icon" id="zoom-out-btn" title="Zoom out (Ctrl/⌘ + scroll)" aria-label="Zoom out">−</button>
+              <button type="button" class="btn zoom-label" id="zoom-reset-btn" title="Reset to 100%">100%</button>
+              <button type="button" class="btn btn-icon" id="zoom-in-btn" title="Zoom in (Ctrl/⌘ + scroll)" aria-label="Zoom in">+</button>
+              <button type="button" class="btn" id="zoom-fit-btn" title="Fit the whole chart to the width">Fit</button>
+            </div>
+            <div class="export-actions">
+              <button type="button" class="btn btn-secondary" id="download-svg-btn">Download SVG</button>
+              <button type="button" class="btn btn-secondary" id="download-png-btn">Download PNG</button>
+              <button type="button" class="btn btn-ghost" id="copy-mermaid-btn">Copy Mermaid code</button>
+            </div>
+          </div>
+        </div>
+        <p class="render-error" id="render-error" hidden></p>
+        <div class="diagram-scroll" id="diagram-scroll">
+          <div id="diagram-container" class="diagram-container"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Runs entirely in your browser · data is stored locally</p>
+      <p><a href="https://github.com/Renarion/roadmap-toolkit" target="_blank" rel="noopener">Open source on GitHub</a></p>
+    </footer>
+  </div>
+
+  <p class="toast" id="copy-toast" hidden role="status">Code copied</p>
+
+  <div class="loader-overlay" id="loader-overlay" hidden aria-hidden="true">
+    <div class="loader-card" role="status" aria-live="polite">
+      <div class="loader-spinner" aria-hidden="true"></div>
+      <p>Building your roadmap…</p>
+    </div>
+  </div>
+
+  <div class="date-range-popover" id="date-range-popover" hidden role="dialog" aria-label="Pick a date range">
+    <div class="date-range-head">
+      <button type="button" class="btn btn-tiny" id="range-prev-month" aria-label="Previous month">‹</button>
+      <p class="date-range-month" id="range-month-label"></p>
+      <button type="button" class="btn btn-tiny" id="range-next-month" aria-label="Next month">›</button>
+    </div>
+    <p class="date-range-step" id="range-step-label">Pick a start date</p>
+    <div class="date-range-weekdays" aria-hidden="true">
+      <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+    </div>
+    <div class="date-range-grid" id="range-day-grid"></div>
+    <div class="date-range-footer">
+      <button type="button" class="btn btn-ghost" id="range-clear-btn">Reset</button>
+      <button type="button" class="btn btn-secondary" id="range-done-btn">Done</button>
+    </div>
+  </div>
+
+  <div class="widget-color-popover" id="widget-color-popover" hidden role="dialog" aria-label="Bar color">
+    <p class="widget-color-popover-title">Bar color</p>
+    <div class="widget-color-swatches" id="widget-color-swatches" role="listbox" aria-label="Palette"></div>
+    <div class="field">
+      <label for="widget-color-rgb">Custom color</label>
+      <div class="widget-color-rgb-row">
+        <input type="text" id="widget-color-rgb" placeholder="rgb(79, 70, 229) or #4f46e5" autocomplete="off" maxlength="32">
+        <button type="button" class="btn btn-secondary" id="widget-color-rgb-apply">Apply</button>
+      </div>
+      <p class="field-error" id="widget-color-rgb-error" hidden></p>
+    </div>
+    <div class="widget-color-footer">
+      <button type="button" class="btn btn-ghost" id="widget-color-reset">Default</button>
+      <button type="button" class="btn btn-secondary" id="widget-color-done">Done</button>
+    </div>
+  </div>
+
+  <template id="task-template">
+    <article class="task-card" data-task-id="">
+      <div class="task-card-top">
+        <span class="task-number"></span>
+        <div class="task-card-actions">
+          <button type="button" class="btn btn-tiny" data-action="duplicate">Duplicate</button>
+          <button type="button" class="btn btn-tiny btn-danger-text" data-action="remove">Remove</button>
+        </div>
+      </div>
+      <div class="task-fields">
+        <div class="field">
+          <label>Category</label>
+          <input type="text" data-field="category" placeholder="e.g. Reduce fraud losses" maxlength="80" autocomplete="off">
+          <p class="field-error" data-error="category" hidden></p>
+        </div>
+        <div class="field">
+          <label>Task name</label>
+          <input type="text" data-field="name" placeholder="e.g. Anomaly detection" maxlength="60" autocomplete="off">
+          <p class="field-error" data-error="name" hidden></p>
+        </div>
+        <div class="field field-period">
+          <label>Dates</label>
+          <button type="button" class="date-range-trigger" data-action="open-range" aria-haspopup="dialog">
+            <span data-range-label>Pick dates</span>
+          </button>
+          <input type="hidden" data-field="start" value="">
+          <input type="hidden" data-field="end" value="">
+          <p class="field-error" data-error="start" hidden></p>
+          <p class="field-error" data-error="end" hidden></p>
+        </div>
+        <div class="field field-color">
+          <label>Color</label>
+          <button type="button" class="widget-color-trigger" data-action="open-color" aria-haspopup="dialog">
+            <span class="widget-color-swatch" data-color-swatch aria-hidden="true"></span>
+            <span data-color-label>Bar color</span>
+          </button>
+          <input type="hidden" data-field="color" value="">
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="js/roadmap.js"></script>
+</body>
+</html>
